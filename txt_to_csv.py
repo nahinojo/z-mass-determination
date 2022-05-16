@@ -2,13 +2,12 @@
 ## Importing libraries.
 import pandas as pd
 
-# Instantiating file and datafram objects. 
+# Instantiating file and dataframe objects. 
 file_txt = open("data\\mini_muons.txt",'r')
 df = pd.DataFrame(columns = ["Momenta 1","Momenta 2","Eta 1","Eta 2","Phi 1","Phi 2","Iso 1","Iso 2"])
 
 ## Extracts data in .txt file line-by-line.
 investigate_collision = 0
-lines_read = 0
 for line_index, line in enumerate(file_txt):
     # Scans for instances where the number of electrons is two.
     if "NumMuons: 2" in line:    
