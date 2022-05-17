@@ -37,12 +37,22 @@ for i in range(len(imass_hist[1]) - 1):
     avg = (imass_hist[1][i] + imass_hist[1][i + 1])/2
     x_vals.append(avg)
 y_vals = imass_hist[0]
-fit_param = curve_fit(fit_func,x_vals,y_vals, maxfev = 50000)[0]
+fit_param = curve_fit(fit_func, 
+                      x_vals,
+                      y_vals,
+                      maxfev = 2000000,
+                      p0 = [1, 1, 1, 10, 999999, 9999],
+                      bounds = ([-np.inf, -np.inf, -np.inf, -np.inf, -np.inf, 9999],
+                                [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf]),
+                      method = 'trf')[0] # [alpha, gamma, N, tau, A, s]
 
+print("")
+print("Parameters Caluclated")
 print(fit_param)
+print("")
 
 ## Plotting fitted function to histogram
-x_vals = np.linspace(70,110,bins)
+x_vals = np.asarray(x_vals)
 plt.plot(x_vals, fit_func(x_vals,*fit_param), 'r')
 
 # Saving histogram. 
