@@ -2,8 +2,17 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.special import wofz
+from scipy.special import voigt_profile
 from scipy.optimize import curve_fit
 
+## Constraints for curve fitting.
+# Shifting x of both functions to center near histogram peak.
+x_shift_voigt = 90.7
+x_shift_fall = 68
+# Graph colors
+hist_clr = "firebrick"
+func_clr = "black"
+func_fall_clr = "lightsalmon"
 
 ## Defining relevant functions
 def f_voigt(x, alpha, gamma):
@@ -13,47 +22,60 @@ def f_voigt(x, alpha, gamma):
 def f_fall(x, N, tau):
     return N * np.exp(-x / tau) 
 
-def fit_func(x, alpha, gamma, N, tau, A, s):
-    return A * ( ((1-s)*f_fall(x, N, tau)) + (s*f_voigt(x, alpha, gamma)) )
+def func(x, alpha, gamma, N, tau, A, s):
+    return A*( ((1 - s)*f_fall(x - x_shift_fall, N, tau)) 
+              + (s*f_voigt(x - x_shift_voigt, alpha, gamma)) )
+
+def func_fall(x, N, tau, A, s):
+    return A*((1 - s)*f_fall(x - x_shift_fall, N, tau))
+
+def func_voigt(x, alpha, gamma, A, s):
+    return A*(s*f_voigt(x - x_shift_voigt, alpha, gamma))
+
 
 
 ## Initial objects
 imass_df = pd.read_csv(open("data\\invariant_mass.csv"))
 
 
-## Plotting invariant mass as histogram
+## Plotting invariant mass as histogram.
 bins = 80
 imass_hist = plt.hist(imass_df["Invariant Mass"],
                       bins = bins,
                       range = (70,110),
-                      color = 'limegreen')
+                      color = hist_clr,
+                      label = "Muon IM")
 plt.title("Muon Invariant Mass")
+plt.xlabel("Mass [GeV]")
+plt.ylabel("Entities / bin")
 
 
 ## Finding parameters to fit curve
-# Every value in x_vals represents the middle point of every bin.
+# Every x value represents the middle point of each histogram bin.
 x_vals = []
 for i in range(len(imass_hist[1]) - 1):
     avg = (imass_hist[1][i] + imass_hist[1][i + 1])/2
     x_vals.append(avg)
+# Every y value is simple the size of the size/height of the histogram bin. 
 y_vals = imass_hist[0]
-fit_param = curve_fit(fit_func, 
+# Calculates best parameters using curve_fit().
+fit_param = curve_fit(func, 
                       x_vals,
                       y_vals,
-                      maxfev = 2000000,
-                      p0 = [1, 1, 1, 10, 999999, 9999],
-                      bounds = ([-np.inf, -np.inf, -np.inf, -np.inf, -np.inf, 9999],
-                                [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf]),
-                      method = 'trf')[0] # [alpha, gamma, N, tau, A, s]
-
+                      maxfev = 3000)[0] # [alpha, gamma, N, tau, A, s]
+print(100*"*")
+print("Calculated Parameters:")
 print("")
-print("Parameters Caluclated")
 print(fit_param)
-print("")
+print(100*"*")
+
 
 ## Plotting fitted function to histogram
+# Alterting list of x values to be a numpy array for plotting
 x_vals = np.asarray(x_vals)
-plt.plot(x_vals, fit_func(x_vals,*fit_param), 'r')
-
+# Plotting the function, given the x values and parameters. 
+plt.plot(x_vals, func(x_vals,*fit_param), func_clr, linestyle='dashed',label="Sig.+Bg.")
+plt.plot(x_vals,func_fall(x_vals,*fit_param[2:]), func_fall_clr, linestyle='dotted',label="Backg.")
+plt.legend()
 # Saving histogram. 
 plt.savefig("plots\\muon_hist.png")
