@@ -45,7 +45,7 @@ imass_hist = plt.hist(imass_df["Invariant Mass"],
                       range = (70,110),
                       color = hist_clr,
                       label = "Muon IM")
-plt.title("Muon Invariant Mass")
+plt.title("Invariant Mass")
 plt.xlabel("Mass [GeV]")
 plt.ylabel("Entities / bin")
 
