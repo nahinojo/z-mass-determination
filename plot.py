@@ -1,3 +1,4 @@
+from turtle import color
 from scipy.optimize import curve_fit
 from scipy.special import voigt_profile as f_voigt
 import numpy as np
@@ -10,10 +11,11 @@ def fitted_histogram(
     iso_upper_bound: float = np.inf,
     bins: int = 60,
     mass_range: tuple = (70,110),
+    hist_name: str = "imass_hist", 
     hist_only: bool = False,
-    display_parameters: bool = True,
-    display_signal: bool = True,
-    hist_name: str = "imass_hist" 
+    display_parameters: bool = False,
+    display_signal: bool = False,
+    return_signal: bool = False
 ):
     """
     Generates fitted histogram from given constraints.
@@ -63,7 +65,7 @@ def fitted_histogram(
     # Unfitted histogram.
     if hist_only:
         plt.savefig("plots\\" + hist_name + ".png")
-        return
+        return None
     
     # Retrieves x and y values of a histogram's bins. 
     x_vals = []
@@ -134,8 +136,16 @@ def fitted_histogram(
     signal_fraction = parameters[0]
     signal_uncertain = np.sqrt(parameter_variance[0, 0])
     if display_signal:
-        print("Signal Fraction:", signal_fraction)
-        print("SF Uncertainty:", signal_uncertain)
+        print(
+            "Signal Fraction: % " 
+            + str(round(100*signal_fraction, 12)) 
+        )
+        print(
+            "SF Uncertainty: % " 
+            + str(round(100*signal_uncertain, 12)) 
+        )
+    if return_signal:
+        return signal_fraction, signal_uncertain
     
     # Labeling histogram and corresponding legend. 
     if signal_fraction <= .9994:
@@ -147,6 +157,57 @@ def fitted_histogram(
             + "±"
             + "{:.3f}".format(signal_uncertain)[1:])
     plt.savefig("plots\\" + hist_name + ".png")
-    return
+    return signal_fraction, signal_uncertain
+plt.clf()
 
-fitted_histogram()
+sf=[]
+su=[]
+iso_rng=[.025*i for i in range(1, 41)]
+for iso in iso_rng:
+    print("")
+    print(20*'*')
+    print("Isolation upper boundary:", iso)
+    fraction, uncertainty = fitted_histogram(
+        iso_upper_bound=iso,
+        display_signal=True,
+        return_signal=True
+    )
+    plt.clf()
+    sf.append(fraction)
+    su.append(uncertainty)
+
+
+print("")
+print(20*"*")
+print(sf)
+
+sf = np.array(sf)
+su = np.vstack((
+    np.array(su),
+    np.array(su)
+))
+
+for i,u in enumerate(su[1,:]):
+    if sf[i] + u > 1:
+        su[1,i] = 1 - sf[i]
+
+
+print(10*"*")
+print("sf:")
+print(sf)
+print("su:")
+print(su)
+print("")
+
+plt.errorbar(
+    iso_rng, 
+    sf,
+    yerr=su,
+    color='indigo',
+    ecolor='plum',
+    elinewidth=0.4
+)
+plt.xlabel("Isolation")
+plt.ylabel("Signal Fraction")
+plt.title("Signal Fraction vs. Isolation.")
+plt.savefig("plots\\signal_vs_iso.png")
