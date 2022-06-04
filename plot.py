@@ -15,7 +15,7 @@ def fitted_histogram(
     hist_only: bool = False,
     display_parameters: bool = False,
     display_signal: bool = False,
-    return_signal: bool = False
+    return_signal_only: bool = False
 ):
     """
     Generates fitted histogram from given constraints.
@@ -57,7 +57,7 @@ def fitted_histogram(
     plt.yticks(np.linspace(0, plt.yticks()[0][-1], num=len(ytick_original)), ytick_original)
     plt.ylabel("Entities / bin")
     if iso_upper_bound == np.inf:
-        plt.title("Muons Invariant Mass")
+        plt.title("Muons Invariant Mass — Any Isolation")
     else:
         plt.title("Muons Invariant Mass — Isolation <" + str(iso_upper_bound))
 
@@ -125,6 +125,7 @@ def fitted_histogram(
         linestyle='dashed', 
         label="Sig.+Backg."
     )
+    
     plt.plot(
         x_vals, 
         (1 - parameters[0]) * f_fall(x_vals, parameters[2], parameters[5]),
@@ -132,6 +133,7 @@ def fitted_histogram(
         linestyle='dotted',
         label="Background"
     )
+    
     # Extracting signal and its uncertainty the prarmeters. 
     signal_fraction = parameters[0]
     signal_uncertain = np.sqrt(parameter_variance[0, 0])
@@ -144,7 +146,7 @@ def fitted_histogram(
             "SF Uncertainty: % " 
             + str(round(100*signal_uncertain, 12)) 
         )
-    if return_signal:
+    if return_signal_only:
         return signal_fraction, signal_uncertain
     
     # Labeling histogram and corresponding legend. 
@@ -158,29 +160,29 @@ def fitted_histogram(
             + "{:.3f}".format(signal_uncertain)[1:])
     plt.savefig("plots\\" + hist_name + ".png")
     return signal_fraction, signal_uncertain
-plt.clf()
+
 
 sf=[]
 su=[]
 iso_rng=[.025*i for i in range(1, 41)]
 for iso in iso_rng:
-    print("")
-    print(20*'*')
-    print("Isolation upper boundary:", iso)
     fraction, uncertainty = fitted_histogram(
         iso_upper_bound=iso,
         display_signal=True,
-        return_signal=True
+        return_signal_only=True
     )
+    
     plt.clf()
     sf.append(fraction)
     su.append(uncertainty)
+    print("")
+    print(20*'*')
+    print("Isolation upper boundary:", iso)
 
 
 print("")
 print(20*"*")
 print(sf)
-
 sf = np.array(sf)
 su = np.vstack((
     np.array(su),
@@ -190,7 +192,6 @@ su = np.vstack((
 for i,u in enumerate(su[1,:]):
     if sf[i] + u > 1:
         su[1,i] = 1 - sf[i]
-
 
 print(10*"*")
 print("sf:")
@@ -207,7 +208,8 @@ plt.errorbar(
     ecolor='plum',
     elinewidth=0.4
 )
+
 plt.xlabel("Isolation")
 plt.ylabel("Signal Fraction")
-plt.title("Signal Fraction vs. Isolation.")
+plt.title("Signal Fraction vs. Isolation Upper Boundary.")
 plt.savefig("plots\\signal_vs_iso.png")
