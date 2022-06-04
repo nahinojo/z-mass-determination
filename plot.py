@@ -162,6 +162,10 @@ def fitted_histogram(
     return signal_fraction, signal_uncertain
 
 
+
+"""
+Signal vs. Isolation Graph. 
+"""
 sf=[]
 su=[]
 iso_rng=[.025*i for i in range(1, 41)]
@@ -171,18 +175,10 @@ for iso in iso_rng:
         display_signal=True,
         return_signal_only=True
     )
-    
     plt.clf()
     sf.append(fraction)
     su.append(uncertainty)
-    print("")
-    print(20*'*')
-    print("Isolation upper boundary:", iso)
 
-
-print("")
-print(20*"*")
-print(sf)
 sf = np.array(sf)
 su = np.vstack((
     np.array(su),
@@ -192,13 +188,6 @@ su = np.vstack((
 for i,u in enumerate(su[1,:]):
     if sf[i] + u > 1:
         su[1,i] = 1 - sf[i]
-
-print(10*"*")
-print("sf:")
-print(sf)
-print("su:")
-print(su)
-print("")
 
 plt.errorbar(
     iso_rng, 
